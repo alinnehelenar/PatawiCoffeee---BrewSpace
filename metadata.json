@@ -1,0 +1,8 @@
+{
+  "name": "Patawi Brewspace",
+  "description": "High-fidelity customer ordering flow for Patawi Coffee Roastery in Purwokerto, Central Java. Minimalist industrial design with specialty coffee catalog, custom grind/size variants, instant checkout, and live QRIS order tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
