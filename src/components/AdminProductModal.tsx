@@ -44,6 +44,11 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
       id: product?.id || `blend-${Date.now()}`,
       name: name.trim() || 'New Specialty Roast',
       roastLevel,
+      roastProfile: roastLevel.toLowerCase().includes('dark')
+        ? 'Medium-Dark'
+        : roastLevel.toLowerCase().includes('light')
+        ? 'Light'
+        : 'Medium',
       tastingNotes: notesArray.length > 0 ? notesArray : ['Rich Chocolate', 'Smooth finish'],
       regularPrice: Number(regularPrice) || 60000,
       memberPrice: Number(memberPrice) || 55000,

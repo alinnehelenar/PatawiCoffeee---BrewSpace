@@ -33,7 +33,11 @@ export const AdminDispatch: React.FC<AdminDispatchProps> = ({
   onBackToDashboard,
 }) => {
   const [courierState, setCourierState] = useState<'idle' | 'searching' | 'assigned' | 'on_the_way'>(
-    orderState.courierStatus || 'idle'
+    orderState.courierStatus === 'searching' ||
+    orderState.courierStatus === 'assigned' ||
+    orderState.courierStatus === 'on_the_way'
+      ? orderState.courierStatus
+      : 'idle'
   );
   const [isReadyForPickup, setIsReadyForPickup] = useState<boolean>(
     orderState.isReadyForPickup || false

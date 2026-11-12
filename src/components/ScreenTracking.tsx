@@ -397,8 +397,8 @@ export const ScreenTracking: React.FC<ScreenTrackingProps> = ({
                           <>
                             <Truck className="w-3.5 h-3.5 text-[#8B5A2B]" />
                             <span>
-                              Driver Assigned: {orderState.courierDriver?.name || 'Budi (GoSend)'} —{' '}
-                              {orderState.courierDriver?.plate || 'H 1234 AB'}
+                              Driver Assigned: {orderState.courierDriver?.name || 'Rian Hidayat (Kurir Independen)'} —{' '}
+                              {orderState.courierDriver?.plate || 'B 4521 SRX'}
                             </span>
                           </>
                         )}
@@ -415,7 +415,7 @@ export const ScreenTracking: React.FC<ScreenTrackingProps> = ({
                           <>
                             <Truck className="w-3.5 h-3.5 text-[#8B5A2B]" />
                             <span>
-                              Kurir Sedang Menuju Lokasi: {orderState.courierDriver?.name || 'Budi (GoSend)'} (~18 menit)
+                              Kurir Sedang Menuju Lokasi: {orderState.courierDriver?.name || 'Rian Hidayat (Kurir Independen)'} (~18 menit)
                             </span>
                           </>
                         )}

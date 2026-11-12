@@ -1,13 +1,13 @@
 import React from 'react';
-import { Bell, ShoppingBag, ArrowLeft, ArrowRightLeft } from 'lucide-react';
-import { ScreenId, UserProfile } from '../types';
+import { Bell, ArrowLeft } from 'lucide-react';
+import { ScreenId, UserProfile, ActiveRole } from '../types';
 
 interface HeaderProps {
-  currentScreen: ScreenId;
-  cartCount: number;
-  onNavigate: (screen: ScreenId) => void;
+  currentScreen?: ScreenId;
+  activeRole: ActiveRole;
+  onChangeRole: (role: ActiveRole) => void;
   onOpenNotifications: () => void;
-  onOpenAdmin: () => void;
+  onNavigateProfile?: () => void;
   title?: string;
   showBack?: boolean;
   onBack?: () => void;
@@ -15,105 +15,106 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  currentScreen,
-  cartCount,
-  onNavigate,
+  activeRole,
+  onChangeRole,
   onOpenNotifications,
-  onOpenAdmin,
+  onNavigateProfile,
   title,
   showBack,
   onBack,
   currentUser,
 }) => {
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md text-[#1A1A1A] border-b border-[#E5E7EB] shadow-2xs">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-2">
-        {/* Left slot: Back button or Brand Wordmark */}
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          {showBack ? (
+    <header className="bg-[#FAF8F5] text-[#1A1A1A] border-b border-[#EBE6DF] px-4 pt-3 pb-2.5 sm:px-6">
+      {/* Top Brand & Profile Row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {showBack && (
             <button
               onClick={onBack}
-              aria-label="Go back"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A1A] hover:bg-[#F3F4F6] transition-colors shrink-0 cursor-pointer"
+              aria-label="Kembali"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A1A] hover:bg-[#EFEAE2] transition-colors -ml-1 cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-          ) : null}
-
-          {title ? (
-            <div className="flex items-center gap-2 truncate">
-              <h1 className="font-display font-bold text-sm text-[#1A1A1A] truncate tracking-tight">
-                {title}
-              </h1>
-              {currentUser && (
-                <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[9px] font-bold uppercase font-mono-numbers bg-[#F3F4F6] text-[#1A1A1A] border border-[#E5E7EB]">
-                  {currentUser.name.split(' ')[0]} · {currentUser.tier.toUpperCase()}
-                </span>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 min-w-0">
-              <button
-                onClick={() => onNavigate('home')}
-                className="text-left font-display font-black text-sm tracking-tight text-[#1A1A1A] hover:text-[#8B5A2B] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                PATAWI BREWSPACE
-              </button>
-              {currentUser && (
-                <button
-                  type="button"
-                  onClick={() => onNavigate('profile')}
-                  className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F8F9FA] hover:bg-[#F3F4F6] text-[#1A1A1A] border border-[#E5E7EB] transition-all cursor-pointer truncate max-w-[140px] sm:max-w-[200px]"
-                  title={`Akun: ${currentUser.name} (${currentUser.tier})`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#8B5A2B]" />
-                  <span className="truncate">{currentUser.name}</span>
-                  {currentUser.tier === 'member' && (
-                    <span className="text-[8px] px-1 py-0.2 bg-[#1A1A1A] text-white rounded-xs font-bold">
-                      VIP
-                    </span>
-                  )}
-                </button>
-              )}
-            </div>
           )}
+
+          <div>
+            <h1 className="font-serif text-lg sm:text-xl font-bold tracking-tight text-[#1A1A1A] leading-none">
+              Patawi
+            </h1>
+            <p className="text-[11px] font-medium tracking-wider text-[#7A6A5A] uppercase -mt-0.5">
+              Coffee
+            </p>
+          </div>
         </div>
 
-        {/* Right slot: Switch Role button + Notifications + Cart */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* Authentic Clean Switch Role Button */}
-          <button
-            onClick={onOpenAdmin}
-            aria-label="Switch Role to Admin"
-            title="Switch Role to Admin / Owner View"
-            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold tracking-tight text-[#1A1A1A] hover:text-white bg-[#F8F9FA] hover:bg-[#1A1A1A] rounded-lg border border-[#E5E7EB] hover:border-[#1A1A1A] transition-all cursor-pointer shadow-2xs active:scale-95"
-          >
-            <ArrowRightLeft className="w-3 h-3 text-[#8B5A2B]" />
-            <span>Switch Role</span>
-          </button>
-
-          {/* Notification Bell */}
+        {/* Right side: Notification bell & Avatar */}
+        <div className="flex items-center gap-2">
           <button
             onClick={onOpenNotifications}
-            aria-label="Notifications"
-            className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A1A] hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+            aria-label="Notifikasi Roastery"
+            className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#4A3E36] hover:bg-[#EFEAE2] transition-colors cursor-pointer"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#8B5A2B]" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#D97706] ring-2 ring-[#FAF8F5]" />
           </button>
 
-          {/* Shopping Cart with Badge */}
           <button
-            onClick={() => onNavigate('checkout')}
-            aria-label={`Shopping cart with ${cartCount} items`}
-            className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A1A] hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+            onClick={onNavigateProfile}
+            aria-label="Profil Pengguna"
+            className="w-8 h-8 rounded-full bg-[#E5DFD7] border border-[#D5CDC2] overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-[#8B5A2B] transition-all"
           >
-            <ShoppingBag className="w-4 h-4" />
-            {cartCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] px-1 bg-[#1A1A1A] text-white text-[10px] font-bold rounded-full flex items-center justify-center font-mono-numbers shadow-xs">
-                {cartCount}
-              </span>
-            )}
+            <img
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
+              alt="Avatar"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // If offline or fails, show initials
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+            <span className="text-xs font-bold text-[#4A3E36]">
+              {currentUser?.name ? currentUser.name.charAt(0) : 'P'}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Role Switcher Pill Bar (Customer | Admin | Kurir) */}
+      <div className="mt-2.5">
+        <div className="grid grid-cols-3 p-1 rounded-2xl bg-[#ECE6DD] border border-[#DDD5C9] shadow-2xs">
+          <button
+            onClick={() => onChangeRole('customer')}
+            className={`py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer text-center ${
+              activeRole === 'customer'
+                ? 'bg-[#1C1815] text-white shadow-xs'
+                : 'text-[#6E5F52] hover:text-[#1A1A1A]'
+            }`}
+          >
+            Customer
+          </button>
+
+          <button
+            onClick={() => onChangeRole('admin')}
+            className={`py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer text-center ${
+              activeRole === 'admin'
+                ? 'bg-[#1C1815] text-white shadow-xs'
+                : 'text-[#6E5F52] hover:text-[#1A1A1A]'
+            }`}
+          >
+            Admin
+          </button>
+
+          <button
+            onClick={() => onChangeRole('kurir')}
+            className={`py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer text-center ${
+              activeRole === 'kurir'
+                ? 'bg-[#1C1815] text-white shadow-xs'
+                : 'text-[#6E5F52] hover:text-[#1A1A1A]'
+            }`}
+          >
+            Kurir
           </button>
         </div>
       </div>

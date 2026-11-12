@@ -24,10 +24,46 @@ test('calculates subtotal based on quantity', () => {
 });
 
 test('calculates total with delivery fee options', () => {
-  // 2x 200g at Member tier (110.000) + GoSend (18.000) = 128.000
-  assert.equal(calculateTotal(110000, 'gosend'), 128000);
-  assert.equal(calculateTotal(110000, 'grab'), 129000);
+  // 2x 200g at Member tier (110.000) + GoSend flat (15.000) = 125.000
+  assert.equal(calculateTotal(110000, 'gosend'), 125000);
+  assert.equal(calculateTotal(110000, 'grab'), 125000);
   assert.equal(calculateTotal(110000, 'pickup'), 110000);
+});
+
+test('strictly enforces maximum 5 km delivery radius restriction', async () => {
+  const { isWithinDeliveryRadius, calculateDeliveryFee, validateDeliveryOrder, MAX_DELIVERY_RADIUS_KM } =
+    await import('./delivery');
+
+  assert.equal(MAX_DELIVERY_RADIUS_KM, 5.0);
+
+  // Within 5 km radius
+  assert.equal(isWithinDeliveryRadius(0.5), true);
+  assert.equal(isWithinDeliveryRadius(2.8), true);
+  assert.equal(isWithinDeliveryRadius(5.0), true);
+
+  // Exceeds 5 km radius
+  assert.equal(isWithinDeliveryRadius(5.1), false);
+  assert.equal(isWithinDeliveryRadius(7.5), false);
+  assert.equal(isWithinDeliveryRadius(12.0), false);
+  assert.equal(isWithinDeliveryRadius(-1), false);
+
+  // Fee calculation
+  assert.equal(calculateDeliveryFee(2.8), 15000);
+  assert.equal(calculateDeliveryFee(5.0), 15000);
+  assert.equal(calculateDeliveryFee(5.2), 0);
+
+  // Order validation helper
+  const validOrder = validateDeliveryOrder(2.8, 'gosend');
+  assert.equal(validOrder.isEligible, true);
+  assert.equal(validOrder.fee, 15000);
+
+  const outOfRangeOrder = validateDeliveryOrder(6.4, 'gosend');
+  assert.equal(outOfRangeOrder.isEligible, false);
+  assert.equal(outOfRangeOrder.fee, 0);
+
+  const pickupOrder = validateDeliveryOrder(10.0, 'pickup');
+  assert.equal(pickupOrder.isEligible, true);
+  assert.equal(pickupOrder.fee, 0);
 });
 
 test('formats Rupiah currency strictly with Indonesian locale dots', () => {
@@ -42,10 +78,26 @@ test('order steps has 6 complete sequential statuses', () => {
   assert.equal(ORDER_STEPS[5].label, 'Completed');
 });
 
-test('contains exactly 14 official products without dummy items', () => {
+test('contains strictly only official products from January 2026 pricelist', () => {
   assert.equal(PRODUCTS.length, 14);
-  const dummyFound = PRODUCTS.some(p => p.name.includes('Gayo') || p.name.includes('Toraja') || p.name.includes('Flores'));
-  assert.equal(dummyFound, false);
+  const fijne55 = PRODUCTS.find((p) => p.id === 'fijne-dag-55');
+  assert.ok(fijne55);
+  const fijne25 = PRODUCTS.find((p) => p.id === 'fijne-dag-25-75');
+  assert.ok(fijne25);
+  const mazzel100 = PRODUCTS.find((p) => p.id === 'mazzel-dragger-100');
+  assert.ok(mazzel100);
+  const robusta = PRODUCTS.find((p) => p.id === 'fine-robusta-temanggung');
+  assert.ok(robusta);
+
+  // Assert dummy products are deleted
+  const gayo = PRODUCTS.find((p) => p.id === 'aceh-gayo-pantan-musara');
+  assert.equal(gayo, undefined);
+  const toraja = PRODUCTS.find((p) => p.id === 'toraja-sapan-washed');
+  assert.equal(toraja, undefined);
+  const bali = PRODUCTS.find((p) => p.id === 'bali-kintamani');
+  assert.equal(bali, undefined);
+  const signature = PRODUCTS.find((p) => p.id === 'patawi-signature');
+  assert.equal(signature, undefined);
 });
 
 test('official January 2026 pricing: Fijne Dag 25/75', () => {
@@ -86,6 +138,26 @@ test('official January 2026 pricing: Mazzel Dragger (1000g only)', () => {
   assert.ok(m25);
   assert.equal(getProductPrice(m25, '1kg', 'regular'), 160000);
   assert.equal(getProductPrice(m25, '1kg', 'member'), 155000);
+
+  const m46 = PRODUCTS.find((it) => it.id === 'mazzel-dragger-46')!;
+  assert.ok(m46);
+  assert.equal(getProductPrice(m46, '1kg', 'regular'), 170000);
+  assert.equal(getProductPrice(m46, '1kg', 'member'), 165000);
+
+  const m55 = PRODUCTS.find((it) => it.id === 'mazzel-dragger-55')!;
+  assert.ok(m55);
+  assert.equal(getProductPrice(m55, '1kg', 'regular'), 175000);
+  assert.equal(getProductPrice(m55, '1kg', 'member'), 170000);
+
+  const m64 = PRODUCTS.find((it) => it.id === 'mazzel-dragger-64')!;
+  assert.ok(m64);
+  assert.equal(getProductPrice(m64, '1kg', 'regular'), 185000);
+  assert.equal(getProductPrice(m64, '1kg', 'member'), 180000);
+
+  const m73 = PRODUCTS.find((it) => it.id === 'mazzel-dragger-73')!;
+  assert.ok(m73);
+  assert.equal(getProductPrice(m73, '1kg', 'regular'), 190000);
+  assert.equal(getProductPrice(m73, '1kg', 'member'), 185000);
 
   const m100 = PRODUCTS.find((it) => it.id === 'mazzel-dragger-100')!;
   assert.ok(m100);

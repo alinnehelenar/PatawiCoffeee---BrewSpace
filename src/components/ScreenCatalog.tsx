@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Product, ScreenId, CategoryFilter, RoastProfileFilter } from '../types';
 import { formatRupiah } from '../utils/pricing';
+import { CoffeeImage } from './CoffeeImage';
 
 interface ScreenCatalogProps {
   products: Product[];
@@ -300,12 +301,12 @@ export const ScreenCatalog: React.FC<ScreenCatalogProps> = ({
                       </div>
 
                       {/* Product Image Container */}
-                      <div className="relative aspect-square w-full rounded-xl bg-[#F8F9FA] border border-[#E5E7EB] p-2 flex items-center justify-center overflow-hidden mb-2.5">
-                        <img
+                      <div className="relative aspect-square w-full rounded-xl bg-[#F8F9FA] border border-[#E5E7EB] overflow-hidden mb-2.5">
+                        <CoffeeImage
                           src={product.image}
                           alt={product.name}
-                          className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-300"
-                          referrerPolicy="no-referrer"
+                          regionTag={product.regionTag}
+                          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
                         />
 
                         {/* Badges on image */}
@@ -360,7 +361,7 @@ export const ScreenCatalog: React.FC<ScreenCatalogProps> = ({
                       {/* Tags */}
                       <div className="flex flex-wrap items-center gap-1 mt-1.5">
                         <span className="text-[9px] bg-[#F3F4F6] text-[#374151] font-medium px-1.5 py-0.5 rounded font-mono-numbers">
-                          {product.roastProfile === 'medium' ? 'Medium' : 'Med-Dark'}
+                          {product.roastProfile}
                         </span>
                         <span className="text-[9px] bg-[#F3F4F6] text-[#374151] font-medium px-1.5 py-0.5 rounded font-mono-numbers">
                           {product.sizes.length === 1 ? '1000g' : '200g–1kg'}

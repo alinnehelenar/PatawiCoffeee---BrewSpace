@@ -1,234 +1,168 @@
 import React, { useState } from 'react';
-import { ScreenId, AdminScreenId, ActiveRole, Product, CartItem, OrderState, CategoryFilter, UserProfile } from './types';
-import { PRODUCTS, DEFAULT_CUSTOMER, DEFAULT_USER_PROFILE, DEMO_USERS } from './data/products';
+import {
+  ScreenId,
+  ActiveRole,
+  AdminTab,
+  CourierTab,
+  Product,
+  CartItem,
+  OrderState,
+  CategoryFilter,
+  UserProfile,
+} from './types';
+import { PRODUCTS, DEFAULT_CUSTOMER, DEFAULT_USER_PROFILE } from './data/products';
 import { getProductPrice } from './utils/pricing';
 import { Header } from './components/Header';
-import { AdminHeader } from './components/AdminHeader';
 import { ScreenHome } from './components/ScreenHome';
 import { ScreenCatalog } from './components/ScreenCatalog';
-import { ScreenDetail } from './components/ScreenDetail';
 import { ScreenCheckout } from './components/ScreenCheckout';
 import { ScreenTracking } from './components/ScreenTracking';
 import { ScreenProfile } from './components/ScreenProfile';
 import { ScreenAuth } from './components/ScreenAuth';
 import { BottomNavBar } from './components/BottomNavBar';
-import { AdminDashboard } from './components/AdminDashboard';
-import { AdminDispatch } from './components/AdminDispatch';
-import { AdminInventory } from './components/AdminInventory';
+import { ProductDetailModal } from './components/ProductDetailModal';
+import { GrindGuideModal } from './components/GrindGuideModal';
+import { OrderSuccessModal } from './components/OrderSuccessModal';
+import { DigitalInvoiceModal } from './components/DigitalInvoiceModal';
+import { CourierDashboard } from './components/CourierDashboard';
+import { AdminPanel } from './components/AdminPanel';
 import { NotificationDrawer } from './components/NotificationDrawer';
 
 export default function App() {
-  // Roles: 'customer' or 'admin'
+  // Active Role: 'customer' | 'admin' | 'kurir'
   const [activeRole, setActiveRole] = useState<ActiveRole>('customer');
 
-  // Customer navigation: 'home' | 'catalog' | 'detail' | 'checkout' | 'tracking' | 'profile'
+  // Customer Screen State
   const [currentScreen, setCurrentScreen] = useState<ScreenId>('home');
   const [catalogCategory, setCatalogCategory] = useState<CategoryFilter>('all');
 
-  // Admin navigation: 'dashboard' | 'dispatch' | 'inventory'
-  const [currentAdminScreen, setCurrentAdminScreen] = useState<AdminScreenId>('dashboard');
+  // Admin & Courier sub-tabs
+  const [currentAdminTab, setCurrentAdminTab] = useState<AdminTab>('stok');
+  const [currentCourierTab, setCurrentCourierTab] = useState<CourierTab>('tugas');
 
-  // Shared Products & Inventory State (Only the 14 official items)
+  // Products Dataset
   const [products, setProducts] = useState<Product[]>(PRODUCTS);
-  const [selectedProduct, setSelectedProduct] = useState<Product>(PRODUCTS[2]); // Default Fijne Dag 55
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
 
-  // User Session & Profile State (Default: Rina Kartika, VIP Member)
+  // Modals
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isGrindGuideOpen, setIsGrindGuideOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  // User Profile
   const [currentUser, setCurrentUser] = useState<UserProfile>(DEFAULT_USER_PROFILE);
 
-  // Cart State (initialized with 2 items of Fijne Dag 55 at member tier)
+  // Cart State (Initialized with official Fijne Dag 55)
+  const initialProduct = PRODUCTS.find((p) => p.id === 'fijne-dag-55') || PRODUCTS[0];
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
-      product: PRODUCTS.find((p) => p.id === 'fijne-dag-55') || PRODUCTS[0],
+      product: initialProduct,
       size: '200g',
-      grind: 'Espresso',
-      tier: 'member',
-      quantity: 2,
-      unitPrice: 55000,
+      grind: 'Biji Utuh (Whole Bean)',
+      tier: 'regular',
+      quantity: 1,
+      unitPrice: initialProduct.regularPrice,
     },
   ]);
 
-  // Shared Order State between Customer and Admin
+  // Shared Order State (matching official Fijne Dag 55)
   const [orderState, setOrderState] = useState<OrderState>({
-    orderId: 'PBS-20261109-0012',
+    orderId: '#PTW-74747',
     customer: DEFAULT_CUSTOMER,
     items: [
       {
-        product: PRODUCTS.find((p) => p.id === 'fijne-dag-55') || PRODUCTS[0],
+        product: initialProduct,
         size: '200g',
-        grind: 'Espresso',
-        tier: 'member',
+        grind: 'Biji Utuh (Whole Bean)',
+        tier: 'regular',
         quantity: 2,
-        unitPrice: 55000,
+        unitPrice: initialProduct.regularPrice,
       },
     ],
     deliveryMethod: 'gosend',
-    shippingFee: 18000,
-    subtotal: 110000,
-    total: 128000,
+    shippingFee: 15000,
+    couponDiscount: 20000,
+    subtotal: 120000,
+    taxAmount: 11396,
+    total: 115000,
     paymentMethod: 'qris',
-    orderStep: 1, // Payment Pending
-    verificationStatus: 'pending',
-    courierStatus: 'idle',
-    createdAt: '21:35',
-    countdownSeconds: 14 * 60 + 59,
+    orderStep: 2,
+    verificationStatus: 'verified',
+    courierStatus: 'menuju_outlet',
+    courierDriver: {
+      name: 'Rian Hidayat',
+      plate: 'B 4521 SRX',
+      service: 'GoSend Instant',
+      phone: '+62 813-9876-5432',
+    },
+    createdAt: 'Hari ini • 01:09 WIB',
+    invoiceNumber: '#PTW-74747',
   });
 
   const cartTotalQuantity = cartItems.reduce((acc, it) => acc + it.quantity, 0);
 
-  // Toggle role between Customer and Admin
-  const handleToggleRole = () => {
-    setActiveRole((prev) => (prev === 'customer' ? 'admin' : 'customer'));
-  };
-
-  // Update Profile, Membership Tier, and synchronize pricing across the entire app
-  const handleUpdateProfile = (updated: UserProfile) => {
-    setCurrentUser(updated);
-
-    // Sync customer shipping info to order state
-    setOrderState((prev) => ({
-      ...prev,
-      customer: {
-        name: updated.name,
-        phone: updated.phone,
-        address: updated.address,
-        city: updated.city,
-        postalCode: updated.postalCode,
-        notes: updated.notes,
-      },
-    }));
-
-    // If tier changed, dynamically update cart prices and order totals
-    setCartItems((prevItems) => {
-      const updatedItems = prevItems.map((item) => {
-        const newUnitPrice = getProductPrice(item.product, item.size, updated.tier);
-        return {
-          ...item,
-          tier: updated.tier,
-          unitPrice: newUnitPrice,
-        };
-      });
-
-      const newSubtotal = updatedItems.reduce(
-        (acc, it) => acc + it.unitPrice * it.quantity,
-        0
-      );
-
-      setOrderState((prev) => ({
-        ...prev,
-        items: updatedItems,
-        subtotal: newSubtotal,
-        total: newSubtotal + prev.shippingFee,
-      }));
-
-      return updatedItems;
-    });
-  };
-
-  const handleLogin = (user: UserProfile) => {
-    handleUpdateProfile(user);
-    setCurrentScreen('profile');
-  };
-
-  const handleLogout = () => {
-    setCurrentUser((prev) => ({ ...prev, isLoggedIn: false }));
-    setCurrentScreen('auth');
-  };
-
-  // Customer actions
+  // Product Selection -> Open Detail Modal
   const handleSelectProduct = (product: Product) => {
     setSelectedProduct(product);
-    setCurrentScreen('detail');
+    setIsDetailModalOpen(true);
   };
 
+  // Quick Add Direct from Card
   const handleAddToCartDirect = (product: Product) => {
-    setAddedProductId(product.id);
-    const size = product.sizes.includes('200g') ? '200g' : product.sizes[0];
-    const unitPrice = getProductPrice(product, size, currentUser.tier);
+    setSelectedProduct(product);
+    setIsDetailModalOpen(true);
+  };
 
+  // Add Item to Cart from Customization Modal
+  const handleAddToCartFromModal = (item: CartItem) => {
+    setAddedProductId(item.product.id);
     setCartItems((prev) => {
-      const existing = prev.find((it) => it.product.id === product.id && it.size === size);
+      const existing = prev.find(
+        (it) =>
+          it.product.id === item.product.id &&
+          it.size === item.size &&
+          it.grind === item.grind
+      );
       if (existing) {
         return prev.map((it) =>
-          it.product.id === product.id && it.size === size
-            ? { ...it, quantity: it.quantity + 1 }
-            : it
+          it === existing ? { ...it, quantity: it.quantity + item.quantity } : it
         );
       }
-      return [
-        ...prev,
-        {
-          product,
-          size,
-          grind: 'Espresso',
-          tier: currentUser.tier,
-          quantity: 1,
-          unitPrice,
-        },
-      ];
+      return [...prev, item];
     });
+
     setTimeout(() => setAddedProductId(null), 1500);
   };
 
-  const handleAddToCartFromDetail = (item: CartItem, proceedToCheckout: boolean) => {
-    setCartItems([item]);
-    if (proceedToCheckout) {
-      setCurrentScreen('checkout');
-    }
-  };
-
+  // Checkout Completion -> Triggers Order Success Modal
   const handleCompleteCheckout = (order: OrderState) => {
     setOrderState(order);
-    setCurrentScreen('tracking');
+    setIsSuccessModalOpen(true);
   };
 
-  // Admin actions
-  const handleVerifyPayment = () => {
-    setOrderState((prev) => ({
-      ...prev,
-      verificationStatus: 'verified',
-      orderStep: Math.max(prev.orderStep, 2), // Step 2: Payment Verified
-    }));
-  };
-
-  const handleRejectPayment = () => {
-    setOrderState((prev) => ({
-      ...prev,
-      verificationStatus: 'rejected',
-    }));
-  };
-
-  const handleUpdateCourierStatus = (
-    courierStatus: 'idle' | 'searching' | 'assigned' | 'on_the_way',
-    step: number,
-    driver?: { name: string; plate: string; service: string },
-    isPickup?: boolean
-  ) => {
-    setOrderState((prev) => ({
-      ...prev,
-      courierStatus,
-      orderStep: Math.max(prev.orderStep, step),
-      courierDriver: driver || prev.courierDriver,
-      isReadyForPickup: isPickup !== undefined ? isPickup : prev.isReadyForPickup,
-    }));
-  };
-
-  const handleUpdateStock = (productId: string, delta: number) => {
+  // Admin Stock Update (+5 kg Restock)
+  const handleUpdateStockKg = (productId: string, deltaKg: number) => {
     setProducts((prev) =>
       prev.map((p) => {
         if (p.id === productId) {
-          const newStock = Math.max(0, p.stock + delta);
-          let stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock' = 'in_stock';
-          if (newStock <= 0) stockStatus = 'out_of_stock';
-          else if (newStock <= 5) stockStatus = 'low_stock';
-          return { ...p, stock: newStock, stockStatus };
+          const currentKg = p.stockKg ?? p.stock ?? 20;
+          const newKg = Math.max(0, currentKg + deltaKg);
+          return {
+            ...p,
+            stockKg: newKg,
+            stock: newKg,
+            stockStatus: newKg <= 0 ? 'out_of_stock' : newKg <= 5 ? 'low_stock' : 'in_stock',
+          };
         }
         return p;
       })
     );
   };
 
+  // Admin Save / Edit Product
   const handleSaveProduct = (updated: Partial<Product>) => {
     const prodId = updated.id || `blend-${Date.now()}`;
     setProducts((prev) => {
@@ -238,280 +172,226 @@ export default function App() {
       }
       const newProduct: Product = {
         id: prodId,
-        name: updated.name || 'New Coffee Blend',
-        subtitle: updated.subtitle || 'Specialty Roast',
-        category: updated.category || 'premium',
-        roastLevel: updated.roastLevel || 'Medium Roast',
-        blendRatio: '100% Arabica',
-        tastingNotes: updated.tastingNotes || ['Chocolate', 'Smooth'],
-        regularPrice: updated.regularPrice || 60000,
-        memberPrice: updated.memberPrice || 55000,
-        sizes: updated.sizes || ['200g', '500g', '1kg'],
-        grinds: ['Whole Beans', 'Espresso', 'Filter', 'Coarse'],
-        image: PRODUCTS[0].image,
-        description: 'Small batch specialty roast from Patawi Brewspace Purwokerto.',
-        origin: 'Purwokerto, Central Java',
-        altitude: '1.200 MDPL',
+        name: updated.name || 'New Specialty Roast',
+        subtitle: updated.subtitle || 'Roastery Specialty',
+        category: updated.category || 'single-origin',
+        regionTag: updated.regionTag || 'INDONESIA SPECIALTY',
+        altitude: updated.altitude || '1.400 MDPL',
+        rating: 4.9,
+        reviewCount: 12,
+        tastingNotes: updated.tastingNotes || ['Caramel', 'Chocolate'],
+        chips: ['Medium', 'Washed', '1.400 MDPL'],
+        roastProfile: 'Medium',
         process: 'Washed',
-        acidity: 3,
-        body: 4,
-        sweetness: 4,
+        regularPrice: updated.regularPrice || 90000,
+        memberPrice: updated.memberPrice || 85000,
+        sizes: ['200g', '500g', '1kg'],
+        grinds: [
+          'Biji Utuh (Whole Bean)',
+          'Giling Kasar (Coarse)',
+          'Giling Sedang (Medium)',
+          'Giling Halus (Fine)',
+        ],
+        image: PRODUCTS[0].image,
+        description: 'Biji kopi pilihan sangrai artisanal Patawi Roastery.',
+        origin: 'Patawi Brewspace Lab',
         stock: updated.stock ?? 20,
-        stockStatus: updated.stockStatus || 'in_stock',
+        stockKg: updated.stockKg ?? updated.stock ?? 20,
+        stockStatus: 'in_stock',
+        sizePricing: {
+          '200g': { regular: updated.regularPrice || 90000, member: updated.memberPrice || 85000 },
+          '500g': { regular: 200000, member: 190000 },
+          '1kg': { regular: 360000, member: 340000 },
+        },
       };
       return [...prev, newProduct];
     });
   };
 
-  // Render Customer Screen content
-  const renderCustomerScreen = (screen: ScreenId) => {
-    switch (screen) {
-      case 'home':
-        return (
-          <>
-            <Header
-              currentScreen={screen}
-              cartCount={cartTotalQuantity}
-              onNavigate={setCurrentScreen}
-              onOpenNotifications={() => setIsNotificationsOpen(true)}
-              onOpenAdmin={() => setActiveRole('admin')}
-              currentUser={currentUser}
-            />
-            <ScreenHome
-              products={products}
-              onSelectProduct={handleSelectProduct}
-              onAddToCartDirect={handleAddToCartDirect}
-              onNavigate={setCurrentScreen}
-              onSelectCategory={(cat) => setCatalogCategory(cat)}
-              addedProductId={addedProductId}
-            />
-          </>
-        );
-
-      case 'catalog':
-        return (
-          <>
-            <Header
-              currentScreen={screen}
-              cartCount={cartTotalQuantity}
-              onNavigate={setCurrentScreen}
-              onOpenNotifications={() => setIsNotificationsOpen(true)}
-              onOpenAdmin={() => setActiveRole('admin')}
-              title="Katalog Biji Kopi"
-              showBack={true}
-              onBack={() => setCurrentScreen('home')}
-              currentUser={currentUser}
-            />
-            <ScreenCatalog
-              products={products}
-              onSelectProduct={handleSelectProduct}
-              onAddToCartDirect={handleAddToCartDirect}
-              onNavigate={setCurrentScreen}
-              addedProductId={addedProductId}
-              initialCategory={catalogCategory}
-            />
-          </>
-        );
-
-      case 'detail':
-        return (
-          <>
-            <Header
-              currentScreen={screen}
-              cartCount={cartTotalQuantity}
-              onNavigate={setCurrentScreen}
-              onOpenNotifications={() => setIsNotificationsOpen(true)}
-              onOpenAdmin={() => setActiveRole('admin')}
-              title={selectedProduct.name}
-              showBack={true}
-              onBack={() => setCurrentScreen('catalog')}
-              currentUser={currentUser}
-            />
-            <ScreenDetail
-              product={selectedProduct}
-              onAddToCart={handleAddToCartFromDetail}
-              onBack={() => setCurrentScreen('catalog')}
-              defaultTier={currentUser.tier}
-            />
-          </>
-        );
-
-      case 'checkout':
-        return (
-          <>
-            <Header
-              currentScreen={screen}
-              cartCount={cartTotalQuantity}
-              onNavigate={setCurrentScreen}
-              onOpenNotifications={() => setIsNotificationsOpen(true)}
-              onOpenAdmin={() => setActiveRole('admin')}
-              title="Keranjang & Checkout"
-              showBack={true}
-              onBack={() => setCurrentScreen('catalog')}
-              currentUser={currentUser}
-            />
-            <ScreenCheckout
-              cartItems={cartItems}
-              onCompleteCheckout={handleCompleteCheckout}
-              onBack={() => setCurrentScreen('catalog')}
-              customerInfo={orderState.customer}
-            />
-          </>
-        );
-
-      case 'tracking':
-        return (
-          <>
-            <Header
-              currentScreen={screen}
-              cartCount={0}
-              onNavigate={setCurrentScreen}
-              onOpenNotifications={() => setIsNotificationsOpen(true)}
-              onOpenAdmin={() => setActiveRole('admin')}
-              title="Status Pesanan"
-              showBack={true}
-              onBack={() => setCurrentScreen('home')}
-              currentUser={currentUser}
-            />
-            <ScreenTracking
-              orderState={orderState}
-              onRestartDemo={() => setCurrentScreen('home')}
-            />
-          </>
-        );
-
-      case 'profile':
-        return (
-          <>
-            <Header
-              currentScreen={screen}
-              cartCount={cartTotalQuantity}
-              onNavigate={setCurrentScreen}
-              onOpenNotifications={() => setIsNotificationsOpen(true)}
-              onOpenAdmin={() => setActiveRole('admin')}
-              title="Profil Pengguna"
-              showBack={true}
-              onBack={() => setCurrentScreen('home')}
-              currentUser={currentUser}
-            />
-            <ScreenProfile
-              currentUser={currentUser}
-              onUpdateProfile={handleUpdateProfile}
-              onLogout={handleLogout}
-              onNavigateAuth={() => setCurrentScreen('auth')}
-              onSwitchToAdmin={() => setActiveRole('admin')}
-              onNavigateOrder={() => setCurrentScreen('tracking')}
-              orderState={orderState}
-            />
-          </>
-        );
-
-      case 'auth':
-        return (
-          <>
-            <Header
-              currentScreen={screen}
-              cartCount={cartTotalQuantity}
-              onNavigate={setCurrentScreen}
-              onOpenNotifications={() => setIsNotificationsOpen(true)}
-              onOpenAdmin={() => setActiveRole('admin')}
-              title="Masuk / Daftar"
-              showBack={true}
-              onBack={() => setCurrentScreen('profile')}
-              currentUser={currentUser}
-            />
-            <ScreenAuth
-              onLogin={handleLogin}
-              onNavigate={setCurrentScreen}
-              onBack={() => setCurrentScreen('profile')}
-            />
-          </>
-        );
-    }
-  };
-
-  // Render Admin Screen content
-  const renderAdminScreen = (screen: AdminScreenId) => {
-    switch (screen) {
-      case 'dashboard':
-        return (
-          <>
-            <AdminHeader
-              currentAdminScreen={screen}
-              onNavigateAdmin={setCurrentAdminScreen}
-              onSwitchToCustomer={() => setActiveRole('customer')}
-              title="Patawi Admin Panel"
-            />
-            <AdminDashboard
-              orderState={orderState}
-              onVerifyPayment={handleVerifyPayment}
-              onRejectPayment={handleRejectPayment}
-              onNavigateAdmin={setCurrentAdminScreen}
-            />
-          </>
-        );
-
-      case 'dispatch':
-        return (
-          <>
-            <AdminHeader
-              currentAdminScreen={screen}
-              onNavigateAdmin={setCurrentAdminScreen}
-              onSwitchToCustomer={() => setActiveRole('customer')}
-              title="Order Courier Dispatch"
-              showBack={true}
-              onBack={() => setCurrentAdminScreen('dashboard')}
-            />
-            <AdminDispatch
-              orderState={orderState}
-              onUpdateCourierStatus={handleUpdateCourierStatus}
-              onBackToDashboard={() => setCurrentAdminScreen('dashboard')}
-            />
-          </>
-        );
-
-      case 'inventory':
-        return (
-          <>
-            <AdminHeader
-              currentAdminScreen={screen}
-              onNavigateAdmin={setCurrentAdminScreen}
-              onSwitchToCustomer={() => setActiveRole('customer')}
-              title="Stock & Inventory"
-              showBack={true}
-              onBack={() => setCurrentAdminScreen('dashboard')}
-            />
-            <AdminInventory
-              products={products}
-              onUpdateStock={handleUpdateStock}
-              onSaveProduct={handleSaveProduct}
-              onBackToDashboard={() => setCurrentAdminScreen('dashboard')}
-            />
-          </>
-        );
-    }
+  // Courier Status Progression
+  const handleUpdateDeliveryStatus = (status: OrderState['courierStatus']) => {
+    setOrderState((prev) => ({
+      ...prev,
+      courierStatus: status,
+      orderStep:
+        status === 'selesai'
+          ? 6
+          : status === 'menuju_penerima'
+          ? 5
+          : status === 'pickup_selesai'
+          ? 4
+          : 3,
+    }));
   };
 
   return (
-    <div className="min-h-screen bg-[#F3F4F6] text-[#1A1A1A] flex flex-col items-center justify-start antialiased selection:bg-[#1A1A1A] selection:text-white">
-      {/* Responsive layout: 100% full width on mobile, expands gracefully up to max-w-6xl on desktop */}
-      <main className="w-full max-w-6xl min-h-screen bg-[#F8F9FA] shadow-xl sm:border-x sm:border-[#E5E7EB] flex flex-col relative mx-auto">
-        {activeRole === 'customer'
-          ? renderCustomerScreen(currentScreen)
-          : renderAdminScreen(currentAdminScreen)}
+    <div className="min-h-screen bg-[#F0ECE6] text-[#1A1A1A] flex flex-col items-center justify-start antialiased selection:bg-[#1A1A1A] selection:text-white">
+      {/* Responsive mobile container (fluid up to 100% on mobile, max-w-4xl/6xl centered on desktop) */}
+      <main className="w-full max-w-4xl min-h-screen bg-[#FAF8F5] shadow-2xl sm:border-x sm:border-[#E8E2D9] flex flex-col relative mx-auto">
+        {/* Top Header with Wordmark, Avatar, and 3-Pill Role Switcher */}
+        <Header
+          activeRole={activeRole}
+          onChangeRole={(role) => setActiveRole(role)}
+          onOpenNotifications={() => setIsNotificationsOpen(true)}
+          onNavigateProfile={() => {
+            setActiveRole('customer');
+            setCurrentScreen('profile');
+          }}
+          currentUser={currentUser}
+          showBack={currentScreen !== 'home' && activeRole === 'customer'}
+          onBack={() => setCurrentScreen('home')}
+        />
 
-        {/* Fixed 5-Tab Bottom Navigation Footer for Customer View (hidden on detail view to give full room to Add-to-Cart sticky bar) */}
-        {activeRole === 'customer' && currentScreen !== 'detail' && (
-          <BottomNavBar
-            currentScreen={currentScreen}
-            onNavigate={setCurrentScreen}
-            cartCount={cartTotalQuantity}
-            hasActiveOrder={true}
+        {/* View Routing based on Active Role */}
+        {activeRole === 'customer' && (
+          <>
+            {currentScreen === 'home' && (
+              <ScreenHome
+                products={products}
+                onSelectProduct={handleSelectProduct}
+                onAddToCartDirect={handleAddToCartDirect}
+                onNavigate={setCurrentScreen}
+                onSelectCategory={(cat) => setCatalogCategory(cat)}
+                addedProductId={addedProductId}
+                userTier={currentUser.tier}
+              />
+            )}
+
+            {currentScreen === 'catalog' && (
+              <ScreenCatalog
+                products={products}
+                onSelectProduct={handleSelectProduct}
+                onAddToCartDirect={handleAddToCartDirect}
+                onNavigate={setCurrentScreen}
+                addedProductId={addedProductId}
+                initialCategory={catalogCategory}
+              />
+            )}
+
+            {currentScreen === 'checkout' && (
+              <ScreenCheckout
+                cartItems={cartItems}
+                onCompleteCheckout={handleCompleteCheckout}
+                onBack={() => setCurrentScreen('home')}
+                customerInfo={currentUser}
+              />
+            )}
+
+            {currentScreen === 'tracking' && (
+              <ScreenTracking
+                orderState={orderState}
+                onRestartDemo={() => setCurrentScreen('home')}
+              />
+            )}
+
+            {currentScreen === 'profile' && (
+              <ScreenProfile
+                currentUser={currentUser}
+                onUpdateProfile={(updated) => setCurrentUser(updated)}
+                onLogout={() => setCurrentScreen('auth')}
+                onNavigateAuth={() => setCurrentScreen('auth')}
+                onSwitchToAdmin={() => setActiveRole('admin')}
+                onNavigateOrder={() => setCurrentScreen('tracking')}
+                orderState={orderState}
+              />
+            )}
+
+            {currentScreen === 'auth' && (
+              <ScreenAuth
+                onLogin={(user) => {
+                  setCurrentUser(user);
+                  setCurrentScreen('profile');
+                }}
+                onNavigate={setCurrentScreen}
+                onBack={() => setCurrentScreen('profile')}
+              />
+            )}
+          </>
+        )}
+
+        {activeRole === 'admin' && (
+          <AdminPanel
+            products={products}
+            orderState={orderState}
+            onUpdateStockKg={handleUpdateStockKg}
+            onSaveProduct={handleSaveProduct}
+            onSwitchRole={(role) => setActiveRole(role)}
+            activeTab={currentAdminTab}
+            onChangeTab={setCurrentAdminTab}
+            onVerifyPayment={() => {
+              setOrderState((prev) => ({
+                ...prev,
+                verificationStatus: 'verified',
+                orderStep: Math.max(prev.orderStep, 2),
+              }));
+            }}
           />
         )}
+
+        {activeRole === 'kurir' && (
+          <CourierDashboard
+            orderState={orderState}
+            activeTab={currentCourierTab}
+            onChangeTab={setCurrentCourierTab}
+            onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
+            onSwitchRole={(role) => setActiveRole(role)}
+          />
+        )}
+
+        {/* Dynamic Multi-Role Bottom Navigation Footer */}
+        <BottomNavBar
+          currentScreen={currentScreen}
+          onNavigateCustomer={setCurrentScreen}
+          cartCount={cartTotalQuantity}
+          activeRole={activeRole}
+          currentAdminTab={currentAdminTab}
+          onNavigateAdmin={setCurrentAdminTab}
+          currentCourierTab={currentCourierTab}
+          onNavigateCourier={setCurrentCourierTab}
+        />
       </main>
 
-      {/* Notifications Drawer */}
+      {/* Product Customization Modal (Screen 2 in Image 1) */}
+      <ProductDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        product={selectedProduct}
+        onAddToCart={handleAddToCartFromModal}
+        onOpenGrindGuide={() => setIsGrindGuideOpen(true)}
+        userTier={currentUser.tier}
+      />
+
+      {/* Grind Guide Modal (Screen 3 in Image 1) */}
+      <GrindGuideModal
+        isOpen={isGrindGuideOpen}
+        onClose={() => setIsGrindGuideOpen(false)}
+      />
+
+      {/* Order Confirmation & Email Alert Modal (Screen 4 in Image 2) */}
+      <OrderSuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        orderState={orderState}
+        onOpenInvoice={() => setIsInvoiceModalOpen(true)}
+        onTrackOrder={() => {
+          setIsSuccessModalOpen(false);
+          setActiveRole('customer');
+          setCurrentScreen('tracking');
+        }}
+        onBackToHome={() => {
+          setIsSuccessModalOpen(false);
+          setCurrentScreen('home');
+        }}
+      />
+
+      {/* Official Digital Invoice Modal (Screen 5 in Image 2) */}
+      <DigitalInvoiceModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => setIsInvoiceModalOpen(false)}
+        orderState={orderState}
+      />
+
+      {/* Notification Drawer */}
       <NotificationDrawer
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}

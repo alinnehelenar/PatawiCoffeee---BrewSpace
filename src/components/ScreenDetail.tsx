@@ -19,7 +19,9 @@ export const ScreenDetail: React.FC<ScreenDetailProps> = ({
   const [selectedSize, setSelectedSize] = useState<SizeOption>(
     product.sizes.includes('200g') ? '200g' : product.sizes[0] || '1kg'
   );
-  const [selectedGrind, setSelectedGrind] = useState<GrindOption>('Espresso');
+  const [selectedGrind, setSelectedGrind] = useState<GrindOption>(
+    product.grinds[0] || 'Biji Utuh (Whole Bean)'
+  );
   const [selectedTier, setSelectedTier] = useState<PriceTier>(defaultTier);
   const [quantity, setQuantity] = useState<number>(2);
   const [addedSuccess, setAddedSuccess] = useState<boolean>(false);
@@ -101,7 +103,7 @@ export const ScreenDetail: React.FC<ScreenDetailProps> = ({
                 {product.name}
               </h1>
               <p className="text-xs sm:text-sm text-[#8B5A2B] font-semibold tracking-wide mt-1">
-                {product.subtitle} · {product.roastLevel}
+                {product.subtitle} · {product.roastLevel || product.roastProfile}
               </p>
 
               <p className="text-xs sm:text-sm text-[#4B5563] leading-relaxed mt-2.5">
@@ -116,7 +118,7 @@ export const ScreenDetail: React.FC<ScreenDetailProps> = ({
                   Flavor Profile Notes
                 </span>
                 <span className="text-[11px] text-[#8B5A2B] font-mono-numbers font-medium">
-                  {product.blendRatio}
+                  {product.blendRatio || product.origin}
                 </span>
               </div>
 
@@ -136,19 +138,19 @@ export const ScreenDetail: React.FC<ScreenDetailProps> = ({
                 <div className="p-2 rounded-xl bg-[#F8F9FA]">
                   <div className="text-[10px] text-[#6B7280] uppercase">Acidity</div>
                   <div className="font-bold text-xs text-[#1A1A1A] font-mono-numbers mt-0.5">
-                    {product.acidity}/5 ({product.acidity <= 2 ? 'Low-Med' : 'Bright'})
+                    {product.acidity ?? product.cuppingProfile?.acidityLevel ?? 3}/5
                   </div>
                 </div>
                 <div className="p-2 rounded-xl bg-[#F8F9FA]">
                   <div className="text-[10px] text-[#6B7280] uppercase">Body</div>
                   <div className="font-bold text-xs text-[#1A1A1A] font-mono-numbers mt-0.5">
-                    {product.body}/5 ({product.body >= 4 ? 'Full' : 'Medium'})
+                    {product.body ?? product.cuppingProfile?.bodyLevel ?? 4}/5
                   </div>
                 </div>
                 <div className="p-2 rounded-xl bg-[#F8F9FA]">
                   <div className="text-[10px] text-[#6B7280] uppercase">Sweetness</div>
                   <div className="font-bold text-xs text-[#1A1A1A] font-mono-numbers mt-0.5">
-                    {product.sweetness}/5 ({product.sweetness >= 4 ? 'High' : 'Smooth'})
+                    {product.sweetness ?? product.cuppingProfile?.sweetnessLevel ?? 4}/5
                   </div>
                 </div>
               </div>
@@ -293,11 +295,11 @@ export const ScreenDetail: React.FC<ScreenDetailProps> = ({
                         )}
                       </div>
                       <div className="text-[10px] text-[#6B7280] mt-0.5">
-                        {grind === 'Whole Beans'
+                        {grind.includes('Whole') || grind.includes('Utuh')
                           ? 'Kesegaran maksimal biji sangrai'
-                          : grind === 'Espresso'
+                          : grind.includes('Espresso') || grind.includes('Halus')
                           ? 'Kalibrasi halus 250μm mesin'
-                          : grind === 'Filter'
+                          : grind.includes('Filter') || grind.includes('Sedang')
                           ? 'V60 / Kalita Wave / Aeropress'
                           : 'French Press / Cold Brew'}
                       </div>

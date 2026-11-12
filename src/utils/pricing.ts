@@ -16,9 +16,12 @@ export const BASE_PRICES: Record<SizeOption, { regular: number; member: number }
   '1kg': { regular: 200000, member: 195000 },
 };
 
+export const MAX_DELIVERY_RADIUS_KM = 5.0;
+export const DEFAULT_DELIVERY_DISTANCE_KM = 2.8;
+
 export const DELIVERY_FEES: Record<DeliveryMethod, number> = {
-  gosend: 18000,
-  grab: 19000,
+  gosend: 15000,
+  grab: 15000,
   pickup: 0,
 };
 

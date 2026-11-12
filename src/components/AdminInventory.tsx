@@ -95,7 +95,7 @@ export const AdminInventory: React.FC<AdminInventoryProps> = ({
                         {product.name}
                       </h3>
                       <p className="text-[11px] text-[#6B7280] truncate">
-                        {product.roastLevel}
+                        {product.roastLevel || product.roastProfile}
                       </p>
                       <div className="text-[10px] text-[#6B7280] mt-0.5 font-mono-numbers">
                         Regular {formatRupiah(product.regularPrice)} · Member{' '}
